@@ -1,0 +1,126 @@
+.page { max-width: 720px; display: flex; flex-direction: column; gap: 48px; }
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+.hero {
+  text-align: center;
+  background: var(--bg-dark); color: #f5f3ee;
+  border-radius: var(--radius); padding: 48px 32px;
+}
+.heroEmoji { font-size: 52px; margin-bottom: 16px; }
+.heroTitle {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px; font-weight: 400; line-height: 1.35;
+  margin-bottom: 16px;
+}
+.heroQuote {
+  font-size: 15px; color: rgba(245,243,238,0.55);
+  font-style: italic; max-width: 440px; margin: 0 auto;
+}
+
+/* ── Story ────────────────────────────────────────────────────────────────── */
+.story { display: flex; flex-direction: column; gap: 20px; }
+.storyBlock {
+  display: flex; gap: 16px; align-items: flex-start;
+  background: var(--bg-card); border: 0.5px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  box-shadow: var(--shadow);
+}
+.storyIcon { font-size: 28px; flex-shrink: 0; margin-top: 2px; }
+.storyBlock h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.storyBlock p  { font-size: 14px; color: var(--muted); line-height: 1.7; }
+
+/* ── Fun facts ────────────────────────────────────────────────────────────── */
+.sectionTitle {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px; font-weight: 400; margin-bottom: 16px;
+}
+.factsGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.factCard {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: var(--bg-card); border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px;
+  box-shadow: var(--shadow);
+}
+.factEmoji { font-size: 22px; flex-shrink: 0; }
+.factCard p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+/* ── Tech ─────────────────────────────────────────────────────────────────── */
+.techGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.techCard {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 14px 12px; background: var(--bg-card);
+  border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+}
+.techIcon { font-size: 20px; }
+.techName { font-size: 13px; font-weight: 500; }
+.techDesc { font-size: 12px; color: var(--muted); }
+
+/* ── How it works ─────────────────────────────────────────────────────────── */
+.steps { display: flex; flex-direction: column; gap: 12px; }
+.step {
+  display: flex; align-items: flex-start; gap: 14px;
+  background: var(--bg-card); border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+.stepNum { font-size: 22px; flex-shrink: 0; }
+.step p  { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+/* ── Feedback ─────────────────────────────────────────────────────────────── */
+.feedbackSection {
+  background: var(--bg-card); border: 0.5px solid var(--border);
+  border-radius: var(--radius); padding: 32px;
+  box-shadow: var(--shadow);
+}
+.feedbackHeader { margin-bottom: 24px; }
+.feedbackHeader h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px; font-weight: 400; margin-bottom: 8px;
+}
+.feedbackHeader p { font-size: 14px; color: var(--muted); line-height: 1.7; }
+
+.form { display: flex; flex-direction: column; gap: 16px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.field input, .field textarea {
+  padding: 10px 14px; font-size: 14px;
+  border: 0.5px solid var(--border-md); border-radius: var(--radius-sm);
+  background: var(--bg); color: var(--text); outline: none;
+  font-family: 'DM Sans', sans-serif; resize: vertical;
+  transition: border-color 0.15s;
+}
+.field input:focus, .field textarea:focus { border-color: var(--text); }
+.field input::placeholder, .field textarea::placeholder { color: var(--light); }
+
+.btn {
+  align-self: flex-start; padding: 11px 24px; font-size: 14px; font-weight: 500;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg-dark); color: #f5f3ee;
+  border: none; border-radius: var(--radius-sm);
+  cursor: pointer; transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btnGhost {
+  padding: 9px 18px; font-size: 13px; font-family: 'DM Sans', sans-serif;
+  background: transparent; color: var(--text);
+  border: 0.5px solid var(--border-md); border-radius: var(--radius-sm);
+  cursor: pointer; transition: background 0.12s;
+}
+.btnGhost:hover { background: var(--bg); }
+
+.sentMsg {
+  text-align: center; padding: 24px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.sentIcon { font-size: 44px; }
+.sentMsg h3 { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 400; }
+.sentMsg p  { font-size: 14px; color: var(--muted); max-width: 360px; line-height: 1.6; }
+
+@media (max-width: 600px) {
+  .heroTitle  { font-size: 22px; }
+  .factsGrid  { grid-template-columns: 1fr; }
+  .techGrid   { grid-template-columns: repeat(2, 1fr); }
+}

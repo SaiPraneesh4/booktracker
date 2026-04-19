@@ -1,0 +1,19 @@
+# ── Root-level gitignore ───────────────────────────────────────────
+# Each subfolder (backend/ frontend/) has its own .gitignore.
+# This root file only covers root-level concerns.
+
+# OS junk
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Safety net — catches node_modules if accidentally created at root
+node_modules/

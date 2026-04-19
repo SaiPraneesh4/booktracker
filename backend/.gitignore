@@ -1,0 +1,25 @@
+# ── Dependencies ──────────────────────────────────────────────────
+node_modules/
+
+# ── Environment variables (contains secrets) ──────────────────────
+.env
+.env.local
+.env.production
+
+# Allow the example template
+!.env.example
+
+# ── Logs ──────────────────────────────────────────────────────────
+npm-debug.log*
+yarn-error.log*
+*.log
+logs/
+
+# ── OS junk ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Editor ────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp

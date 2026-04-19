@@ -1,0 +1,41 @@
+.header {
+  background: var(--bg-dark);
+  color: #f5f3ee;
+  position: sticky; top: 0; z-index: 100;
+}
+.inner {
+  max-width: 960px; margin: 0 auto; padding: 0 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+}
+.logo { display: flex; align-items: center; gap: 10px; color: #f5f3ee; }
+.logo span { font-size: 24px; }
+.logoTitle { font-family: 'DM Serif Display', serif; font-size: 18px; }
+.logoSub { font-size: 11px; color: rgba(245,243,238,0.45); margin-top: -2px; }
+
+.nav { display: flex; align-items: center; gap: 4px; }
+.navLink {
+  padding: 7px 14px; font-size: 14px; color: rgba(245,243,238,0.65);
+  border-radius: var(--radius-sm); transition: all 0.15s;
+}
+.navLink:hover { color: #f5f3ee; background: rgba(255,255,255,0.07); }
+.navLink.active { color: #f5f3ee; }
+
+.myBooksBtn {
+  margin-left: 8px;
+  padding: 7px 16px; font-size: 14px; font-weight: 500;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--green); color: #fff;
+  border: none; border-radius: var(--radius-sm);
+  cursor: pointer; transition: opacity 0.15s;
+}
+.myBooksBtn:hover { opacity: 0.85; }
+
+.main { max-width: 960px; margin: 0 auto; padding: 32px 24px; min-height: calc(100vh - 120px); }
+
+.footer {
+  text-align: center; padding: 20px;
+  font-size: 13px; color: var(--light);
+  border-top: 0.5px solid var(--border);
+}
+.footer a { color: var(--green); }

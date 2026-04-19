@@ -1,0 +1,29 @@
+# ── Dependencies ──────────────────────────────────────────────────
+node_modules/
+
+# ── Environment variables (contains secrets) ──────────────────────
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Allow the example template
+!.env.example
+
+# ── React production build ─────────────────────────────────────────
+build/
+
+# ── Logs ──────────────────────────────────────────────────────────
+npm-debug.log*
+yarn-error.log*
+*.log
+
+# ── OS junk ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Editor ────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
