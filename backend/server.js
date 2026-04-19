@@ -3,7 +3,7 @@ const express  = require("express");
 const cors     = require("cors");
 const cron     = require("node-cron");
 const crypto   = require("crypto");
-const pool     = require("./db/pool");
+const db = require("./db/pool");
 const { scrapeBook }     = require("./scraper");
 const { sendPriceAlert, sendMagicLink, sendFeedback } = require("./emailService");
 
@@ -18,7 +18,7 @@ app.use(cors({ origin: FRONTEND_URL }));
 app.use(express.json());
 
 // ── DB health check on startup ────────────────────────────────────────────────
-pool.query("SELECT NOW()").then(() => {
+db.query("SELECT NOW()").then(() => {
   console.log("[DB] ✓ Connected successfully");
 }).catch(err => {
   console.error("[DB] ✗ Connection failed on startup:", err.message);
@@ -28,7 +28,7 @@ pool.query("SELECT NOW()").then(() => {
 // ── Health check endpoint ─────────────────────────────────────────────────────
 app.get("/api/health", async (req, res) => {
   try {
-    const { rows } = await pool.query("SELECT NOW() as time");
+    const { rows } = await db.query("SELECT NOW() as time");
     res.json({ status: "ok", db: "connected", time: rows[0].time });
   } catch (err) {
     res.status(500).json({ status: "error", db: "disconnected", error: err.message });
@@ -47,7 +47,7 @@ function priceHitsTarget(currentPrice, targetPrice) {
 // GET /api/books — all books with aggregated watcher stats (no emails exposed)
 app.get("/api/books", async (req, res) => {
   try {
-    const { rows } = await pool.query(`
+    const { rows } = await db.query(`
       SELECT
         b.id, b.url, b.title, b.image_url, b.current_price, b.last_checked, b.created_at,
         COUNT(w.id)                              AS total_watchers,
@@ -71,7 +71,7 @@ app.get("/api/books", async (req, res) => {
 app.get("/api/books/search", async (req, res) => {
   const q = `%${req.query.q || ""}%`;
   try {
-    const { rows } = await pool.query(`
+    const { rows } = await db.query(`
       SELECT b.id, b.url, b.title, b.image_url, b.current_price, b.last_checked,
              COUNT(w.id) AS total_watchers
       FROM books b
@@ -98,7 +98,7 @@ app.post("/api/books", async (req, res) => {
   if (parseFloat(targetPrice) <= 0)
     return res.status(400).json({ error: "Invalid target price" });
 
-  const client = await pool.connect();
+  const client = await db.connect();
   try {
     await client.query("BEGIN");
 
@@ -159,7 +159,7 @@ app.post("/api/books", async (req, res) => {
     await client.query("COMMIT");
 
     // Return book with stats (no email data)
-    const result = (await pool.query(`
+    const result = (await db.query(`
       SELECT b.*, COUNT(w.id) AS total_watchers,
              COUNT(w.id) FILTER (WHERE w.notified) AS notified_count,
              COUNT(w.id) FILTER (WHERE NOT w.notified) AS pending_count,
@@ -183,7 +183,7 @@ app.post("/api/books", async (req, res) => {
 // POST /api/books/:id/check — manual refresh
 app.post("/api/books/:id/check", async (req, res) => {
   try {
-    const { rows } = await pool.query("SELECT * FROM books WHERE id=$1", [req.params.id]);
+    const { rows } = await db.query("SELECT * FROM books WHERE id=$1", [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: "Book not found" });
     const book = await checkAndUpdateBook(rows[0]);
     res.json({ book });
@@ -195,7 +195,7 @@ app.post("/api/books/:id/check", async (req, res) => {
 // POST /api/check-all — manual trigger for all
 app.post("/api/check-all", async (req, res) => {
   try {
-    const { rows } = await pool.query("SELECT * FROM books");
+    const { rows } = await db.query("SELECT * FROM books");
     const results = await Promise.allSettled(rows.map(checkAndUpdateBook));
     res.json({ checked: rows.length, ok: results.filter(r => r.status === "fulfilled").length });
   } catch (err) {
@@ -207,7 +207,7 @@ app.post("/api/check-all", async (req, res) => {
 
 app.get("/api/books/:id/history", async (req, res) => {
   try {
-    const { rows } = await pool.query(
+    const { rows } = await db.query(
       "SELECT price, checked_at FROM price_history WHERE book_id=$1 ORDER BY checked_at ASC",
       [req.params.id]
     );
@@ -226,7 +226,7 @@ app.post("/api/auth/magic", async (req, res) => {
     return res.status(400).json({ error: "Valid email required" });
 
   // Check if this email has any watchers
-  const { rows } = await pool.query("SELECT id FROM watchers WHERE email=$1 LIMIT 1", [email]);
+  const { rows } = await db.query("SELECT id FROM watchers WHERE email=$1 LIMIT 1", [email]);
   if (!rows.length)
     return res.status(404).json({ error: "No tracking found for this email" });
 
@@ -234,7 +234,7 @@ app.post("/api/auth/magic", async (req, res) => {
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
-  await pool.query(
+  await db.query(
     "INSERT INTO magic_tokens (email, token, expires_at) VALUES ($1,$2,$3)",
     [email, token, expiresAt]
   );
@@ -256,7 +256,7 @@ app.get("/api/auth/verify", async (req, res) => {
   const { token } = req.query;
   if (!token) return res.status(400).json({ error: "Token required" });
 
-  const { rows } = await pool.query(
+  const { rows } = await db.query(
     "SELECT * FROM magic_tokens WHERE token=$1 AND expires_at > NOW()",
     [token]
   );
@@ -265,7 +265,7 @@ app.get("/api/auth/verify", async (req, res) => {
   const { email } = rows[0];
 
   // Get this user's books with their personal target + status
-  const { rows: books } = await pool.query(`
+  const { rows: books } = await db.query(`
     SELECT
       b.id, b.url, b.title, b.image_url, b.current_price, b.last_checked,
       w.target_price, w.notified, w.notified_at, w.created_at AS joined_at,
@@ -285,7 +285,7 @@ app.get("/api/auth/verify", async (req, res) => {
 app.delete("/api/my-books/:bookId", async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: "Email required" });
-  await pool.query("DELETE FROM watchers WHERE book_id=$1 AND email=$2", [req.params.bookId, email]);
+  await db.query("DELETE FROM watchers WHERE book_id=$1 AND email=$2", [req.params.bookId, email]);
   res.json({ success: true });
 });
 
@@ -295,7 +295,7 @@ app.post("/api/feedback", async (req, res) => {
   const { email, message } = req.body;
   if (!email || !message) return res.status(400).json({ error: "Email and message required" });
 
-  await pool.query("INSERT INTO feedback (email,message) VALUES ($1,$2)", [email, message]);
+  await db.query("INSERT INTO feedback (email,message) VALUES ($1,$2)", [email, message]);
   try {
     await sendFeedback({ fromEmail: email, message, adminEmail: ADMIN_EMAIL });
   } catch (e) {
@@ -319,10 +319,10 @@ async function checkAndUpdateBook(book) {
   }
 
   if (newPrice) {
-    await pool.query("INSERT INTO price_history (book_id,price) VALUES ($1,$2)", [book.id, newPrice]);
+    await db.query("INSERT INTO price_history (book_id,price) VALUES ($1,$2)", [book.id, newPrice]);
   }
 
-  await pool.query(
+  await db.query(
     "UPDATE books SET current_price=$1,title=$2,image_url=$3,last_checked=NOW() WHERE id=$4",
     [newPrice, newTitle, newImage, book.id]
   );
@@ -332,7 +332,7 @@ async function checkAndUpdateBook(book) {
   if (!newPrice) return book;
 
   // Alert all un-notified watchers whose target is reached
-  const { rows: watchers } = await pool.query(
+  const { rows: watchers } = await db.query(
     "SELECT * FROM watchers WHERE book_id=$1 AND notified=FALSE",
     [book.id]
   );
@@ -347,7 +347,7 @@ async function checkAndUpdateBook(book) {
           currentPrice: newPrice,
           targetPrice: w.target_price,
         });
-        await pool.query(
+        await db.query(
           "UPDATE watchers SET notified=TRUE, notified_at=NOW() WHERE id=$1",
           [w.id]
         );
@@ -366,7 +366,7 @@ async function checkAndUpdateBook(book) {
 cron.schedule(CHECK_INTERVAL, async () => {
   console.log(`\n[CRON ${new Date().toISOString()}] ── Daily price check ──`);
   try {
-    const { rows } = await pool.query("SELECT * FROM books");
+    const { rows } = await db.query("SELECT * FROM books");
     console.log(`[CRON] Checking ${rows.length} book(s)...`);
     await Promise.allSettled(rows.map(checkAndUpdateBook));
     console.log("[CRON] Done.\n");
