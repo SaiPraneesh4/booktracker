@@ -17,6 +17,24 @@ const ADMIN_EMAIL    = process.env.ADMIN_EMAIL;
 app.use(cors({ origin: FRONTEND_URL }));
 app.use(express.json());
 
+// ── DB health check on startup ────────────────────────────────────────────────
+pool.query("SELECT NOW()").then(() => {
+  console.log("[DB] ✓ Connected successfully");
+}).catch(err => {
+  console.error("[DB] ✗ Connection failed on startup:", err.message);
+  console.error("[DB] Check DATABASE_URL in environment variables");
+});
+
+// ── Health check endpoint ─────────────────────────────────────────────────────
+app.get("/api/health", async (req, res) => {
+  try {
+    const { rows } = await pool.query("SELECT NOW() as time");
+    res.json({ status: "ok", db: "connected", time: rows[0].time });
+  } catch (err) {
+    res.status(500).json({ status: "error", db: "disconnected", error: err.message });
+  }
+});
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function priceHitsTarget(currentPrice, targetPrice) {
@@ -44,8 +62,8 @@ app.get("/api/books", async (req, res) => {
     `);
     res.json({ books: rows });
   } catch (err) {
-    console.error("GET /api/books:", err.message);
-    res.status(500).json({ error: "Database error" });
+    console.error("[GET /api/books]", err.stack || err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -63,7 +81,7 @@ app.get("/api/books/search", async (req, res) => {
     `, [q]);
     res.json({ books: rows });
   } catch (err) {
-    res.status(500).json({ error: "Database error" });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -153,7 +171,7 @@ app.post("/api/books", async (req, res) => {
     res.status(201).json({ book: result, isNew: !existingWatcher });
   } catch (err) {
     await client.query("ROLLBACK");
-    console.error("POST /api/books:", err.message);
+    console.error("[POST /api/books]", err.stack || err.message);
     res.status(500).json({ error: "Failed to add book" });
   } finally {
     client.release();
@@ -170,7 +188,7 @@ app.post("/api/books/:id/check", async (req, res) => {
     const book = await checkAndUpdateBook(rows[0]);
     res.json({ book });
   } catch (err) {
-    res.status(500).json({ error: "Check failed" });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -181,7 +199,7 @@ app.post("/api/check-all", async (req, res) => {
     const results = await Promise.allSettled(rows.map(checkAndUpdateBook));
     res.json({ checked: rows.length, ok: results.filter(r => r.status === "fulfilled").length });
   } catch (err) {
-    res.status(500).json({ error: "Check-all failed" });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -195,7 +213,7 @@ app.get("/api/books/:id/history", async (req, res) => {
     );
     res.json({ history: rows });
   } catch (err) {
-    res.status(500).json({ error: "Database error" });
+    res.status(500).json({ error: err.message });
   }
 });
 
