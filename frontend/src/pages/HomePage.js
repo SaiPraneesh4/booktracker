@@ -1,40 +1,73 @@
-import React, { useState, useEffect, useContext, useCallback } from "react";
+import React, { useState, useEffect, useContext, useCallback, useRef } from "react";
 import axios from "axios";
 import { ToastContext } from "../components/Layout";
 import BookCard from "../components/BookCard";
 import AddWatcherModal from "../components/AddWatcherModal";
 import styles from "./HomePage.module.css";
 
-const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API          = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const POLL_MS      = 60_000;  // poll every 60s when healthy
+const RETRY_MS     = 15_000;  // retry after 15s on error
+const MAX_RETRIES  = 3;       // stop toasting after 3 consecutive failures
 
 export default function HomePage() {
   const showToast = useContext(ToastContext);
 
-  const [books,      setBooks]      = useState([]);
-  const [search,     setSearch]     = useState("");
-  const [loading,    setLoading]    = useState(true);
-  const [addModal,   setAddModal]   = useState(false);   // "add new book" flow
-  const [newUrl,     setNewUrl]     = useState("");
-  const [urlLoading, setUrlLoading] = useState(false);
-  const [previewBook,setPreviewBook]= useState(null);    // after URL resolved
+  const [books,       setBooks]       = useState([]);
+  const [search,      setSearch]      = useState("");
+  const [loading,     setLoading]     = useState(true);
+  const [apiError,    setApiError]    = useState(false);   // true = backend unreachable
+  const [addModal,    setAddModal]    = useState(false);
+  const [newUrl,      setNewUrl]      = useState("");
+  const [urlLoading,  setUrlLoading]  = useState(false);
+  const [previewBook, setPreviewBook] = useState(null);
+
+  const retryCount   = useRef(0);
+  const timerRef     = useRef(null);
+
+  const scheduleNext = useCallback((delayMs) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => fetchBooks(), delayMs);
+  }, []); // eslint-disable-line
 
   const fetchBooks = useCallback(async () => {
     try {
-      const q = search.trim();
+      const q   = search.trim();
       const url = q
         ? `${API}/api/books/search?q=${encodeURIComponent(q)}`
         : `${API}/api/books`;
-      const { data } = await axios.get(url);
+      const { data } = await axios.get(url, { timeout: 10000 });
       setBooks(data.books);
-    } catch { showToast("Cannot reach backend. Is it running?", "error"); }
-    finally { setLoading(false); }
-  }, [search, showToast]);
+      setApiError(false);
+      retryCount.current = 0;
+      scheduleNext(POLL_MS); // healthy — poll normally
+    } catch (err) {
+      retryCount.current += 1;
+      setApiError(true);
 
-  useEffect(() => { fetchBooks(); }, [fetchBooks]);
-  // Poll every 60s
+      // Only show toast on first failure — not on every retry
+      if (retryCount.current === 1) {
+        showToast("Backend unreachable. Retrying in 15s…", "error");
+      }
+
+      // Stop retrying after MAX_RETRIES — user can manually refresh
+      if (retryCount.current < MAX_RETRIES) {
+        console.warn(`[API] Fetch failed (attempt ${retryCount.current}), retrying in ${RETRY_MS/1000}s`);
+        scheduleNext(RETRY_MS);
+      } else {
+        console.warn("[API] Max retries reached — stopping auto-retry. Refresh page to try again.");
+        showToast("Backend still unreachable. Please refresh the page.", "error");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [search, showToast, scheduleNext]);
+
+  // Initial fetch on mount / search change
   useEffect(() => {
-    const t = setInterval(fetchBooks, 60_000);
-    return () => clearInterval(t);
+    retryCount.current = 0;
+    fetchBooks();
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [fetchBooks]);
 
   // When user submits a URL — resolve the book (create or find) then open watcher modal
@@ -71,6 +104,19 @@ export default function HomePage() {
           onSuccess={fetchBooks}
           showToast={showToast}
         />
+      )}
+
+      {/* ── Backend error banner ───────────────────────────────────────────── */}
+      {apiError && (
+        <div className={styles.errorBanner}>
+          <span>⚠ Cannot reach the server. Retrying automatically…</span>
+          <button
+            className={styles.retryBtn}
+            onClick={() => { retryCount.current = 0; setApiError(false); fetchBooks(); }}
+          >
+            Retry now
+          </button>
+        </div>
       )}
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}

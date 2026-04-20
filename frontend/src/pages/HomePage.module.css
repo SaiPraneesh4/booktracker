@@ -86,3 +86,21 @@
   .heroForm  { flex-direction: column; }
   .heroBtn   { width: 100%; }
 }
+
+/* ── Error banner ─────────────────────────────────────────────────────────── */
+.errorBanner {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 10px 16px; margin-bottom: 16px;
+  background: var(--amber-bg); color: var(--amber);
+  border: 0.5px solid #e6b86a; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500;
+}
+.retryBtn {
+  padding: 5px 12px; font-size: 12px; font-weight: 500;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--amber); color: #fff;
+  border: none; border-radius: var(--radius-sm);
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+.retryBtn:hover { opacity: 0.85; }
